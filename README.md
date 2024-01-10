@@ -38,7 +38,7 @@ This implementation is header-only. Simply include it in your project and you ar
         hashmap.Add("item3", 3.0f);
 
         float item;
-        if (hashmap.Contains("item3", item)) {
+        if (hashmap.Get("item3", item)) {
             std::cout << "item3: " << item << '\n';
         }
         else {
