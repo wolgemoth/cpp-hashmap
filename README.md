@@ -42,7 +42,7 @@ This implementation is header-only. Simply include it in your project and you ar
             std::cout << "item3: " << item << '\n';
         }
         else {
-            std::cout << "item3 not in Hashmap!\n"
+            std::cout << "item3 not in Hashmap!\n";
         }
 
         return 0;
