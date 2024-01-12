@@ -1,4 +1,4 @@
-# C++ Hashmap (1.0.2)
+# C++ Hashmap (1.0.3)
 
 ## Table of Contents
 
