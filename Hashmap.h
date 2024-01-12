@@ -25,6 +25,7 @@
 #ifndef LOUIERIKSSON_HASHMAP_H
 #define LOUIERIKSSON_HASHMAP_H
 
+#include <cstddef>
 #include <functional>
 #include <stdexcept>
 #include <vector>

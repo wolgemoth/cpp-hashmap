@@ -1,4 +1,4 @@
-# C++ Hashmap (1.0.1)
+# C++ Hashmap (1.0.2)
 
 ## Table of Contents
 
@@ -52,9 +52,11 @@ This implementation is header-only. Simply include it in your project and you ar
 
 The hashmap was written in C++17 and utilises the following standard headers:
 
+#### &lt;cstddef&gt;
+This header is used for [size_t](https://en.cppreference.com/w/c/types/size_t), which is used to represent the size of the container.
+
 #### &lt;functional&gt;
 This header is used for [std::hash](https://en.cppreference.com/w/cpp/utility/hash), which allows for generic hashing of C++ types. Developers can also provide custom specializations for their own types.
-
 
 #### &lt;stdexcept&gt;
 This header is used for [std::runtime_error](https://en.cppreference.com/w/cpp/error/runtime_error), which enables the script to throw meaningful exceptions.
