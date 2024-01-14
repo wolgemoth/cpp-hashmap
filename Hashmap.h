@@ -34,7 +34,7 @@ namespace LouiEriksson {
 	
 	/// <summary>
 	/// <para>
-	/// Version 1.0.3
+	/// Version 1.0.4
 	/// </para>
 	/// Custom Hashmap implementation accepting a customisable key and value type. Created using a combination of prior knowledge and brief online tutorial.
 	/// <para><remarks>This implementation requires that your "key" type is compatible with std::hash and that the stored data types are copyable.</remarks></para>
@@ -59,6 +59,7 @@ namespace LouiEriksson {
             KeyValuePair(const KeyValuePair& other) noexcept  :
 				 first(other.first),
 				second(other.second) {}
+				
 		};
 		
 	private:
@@ -110,7 +111,9 @@ namespace LouiEriksson {
 		/// Initialise Hashmap.
 		/// </summary>
 		/// <param name="_capacity">Initial capacity of the Hashmap. Must be larger than 0.</param>
-		Hashmap(const size_t& _capacity = 1) : m_Size(0) {
+		Hashmap(const size_t& _capacity = 1) :
+				m_Size(0)
+		{
 			m_Buckets.resize(_capacity);
 		}
 		
@@ -409,6 +412,7 @@ namespace LouiEriksson {
 			m_Buckets.clear();
 			m_Buckets.resize(1);
 		}
+		
 	};
 	
 } // LouiEriksson
