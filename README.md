@@ -13,15 +13,15 @@ This is a hashmap written in C++.
 
 It has a similar API to C#'s [Dictionary](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.dictionary-2?view=net-8.0)  and self-initializes like an [std::vector](https://en.cppreference.com/w/cpp/container/vector). Currently, it uses [sequential chaining](https://en.wikipedia.org/wiki/Hash_table#Separate_chaining) for collision resolution. More collision resolution techniques may be added in the future.
 
-Explicit finalization of the hashmap is not necessary. However, if you are storing manually-managed memory, then remember to free the element before removing it from the hashmap.
+Explicit finalization of the hashmap is not necessary. However, if you are storing manually-managed memory, then remember to free any elements before removal.
 
-I have taken precautions to improve the exception safety of the hashmap, although it is important to note that no algorithm can be completely immune to exceptions. 
+I have taken precautions to improve the exception safety of the hashmap, although it hasn't been fully stress-tested. Please be aware that since this implementation uses [std::vector](https://en.cppreference.com/w/cpp/container/vector) for the container, anything that breaks a [std::vector](https://en.cppreference.com/w/cpp/container/vector) will also break the hashmap.
 
 If you find a bug or have a feature-request, please raise an issue.
 
 ### Instructions
 
-This implementation is header-only. Simply include it in your project and you are ready to start using it.
+This implementation is header-only. Simply include it in your project and you are ready to start.
 
 #### Example:
     
