@@ -1,4 +1,4 @@
-# C++ Hashmap (1.0.4)
+# C++ Hashmap (2.0.0)
 
 ## Table of Contents
 
@@ -13,15 +13,17 @@ This is a hashmap written in C++.
 
 It has a similar API to C#'s [Dictionary](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.dictionary-2?view=net-8.0)  and self-initializes like an [std::vector](https://en.cppreference.com/w/cpp/container/vector). Currently, it uses [sequential chaining](https://en.wikipedia.org/wiki/Hash_table#Separate_chaining) for collision resolution. More collision resolution techniques may be added in the future.
 
-Explicit finalization of the hashmap is not necessary. However, if you are storing manually-managed memory, then remember to free any elements before removal.
+This structure provides robust exception safety, and is suitable for use in a concurrent environment. Furthermore, it supports move semantics and initialiser lists.
 
-I have taken precautions to improve the exception safety of the hashmap, although it hasn't been fully stress-tested. Please be aware that since this implementation uses [std::vector](https://en.cppreference.com/w/cpp/container/vector) for the container, anything that breaks a [std::vector](https://en.cppreference.com/w/cpp/container/vector) will also break the hashmap.
+Explicit finalization of the hashmap is not necessary. However, if you are storing manually-managed memory, then remember to free any elements before removal.
 
 If you find a bug or have a feature-request, please raise an issue.
 
 ### Instructions
 
-This implementation is header-only. Simply include it in your project and you are ready to start.
+The implementation is header-only and written in templated C++17. You should need not need to make any adjustments to your project settings or compiler flags. 
+
+Simply include it in your project and you are ready to start!
 
 #### Example:
     
@@ -29,20 +31,19 @@ This implementation is header-only. Simply include it in your project and you ar
     
     #include "Hashmap.h"
     
-    Hashmap<std::string, float> hashmap;
+    Hashmap<std::string, float> hashmap {
+        { "key1", 1.0f },
+        { "key2", 2.0f },
+        { "key3", 3.0f },
+    }
 
     int main() {
 
-        hashmap.Add("item1", 1.0f);
-        hashmap.Add("item2", 2.0f);
-        hashmap.Add("item3", 3.0f);
-
-        float item;
-        if (hashmap.Get("item3", item)) {
-            std::cout << "item3: " << item << '\n';
+        if (const auto item = hashmap.Get("key3", item)) {
+            std::cout << "Value: " << item.value() << '\n';
         }
         else {
-            std::cout << "item3 not in Hashmap!\n";
+            std::cout << "Key not in Hashmap!\n";
         }
 
         return 0;
@@ -52,17 +53,20 @@ This implementation is header-only. Simply include it in your project and you ar
 
 The hashmap was written in C++17 and utilises the following standard headers:
 
+#### &lt;algorithm&gt;
 #### &lt;cstddef&gt;
-This header is used for [size_t](https://en.cppreference.com/w/c/types/size_t), which is used to represent the size of the container.
-
 #### &lt;functional&gt;
-This header is used for [std::hash](https://en.cppreference.com/w/cpp/utility/hash), which allows for generic hashing of C++ types. Developers can also provide custom specializations for their own types.
-
+#### &lt;initializer_list&gt;
+#### &lt;optional&gt;
 #### &lt;stdexcept&gt;
-This header is used for [std::runtime_error](https://en.cppreference.com/w/cpp/error/runtime_error), which enables the script to throw meaningful exceptions.
-
 #### &lt;vector&gt;
-This header is used for [std::vector](https://en.cppreference.com/w/cpp/container/vector), which serves as the resizable container for the hashmap.
+#### &lt;mutex&gt;
+
+### Why not use &lt;unordered_set&gt;?
+
+I find unordered_set to be way too verbose for most situations.
+
+In this implementation, key existence and value retrieval are merged into a single conditional expression. This allows for simpler, cleaner code that affords better exception handling.
 
 ### References
 
