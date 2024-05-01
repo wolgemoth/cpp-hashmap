@@ -31,15 +31,16 @@
 #include <cstddef>
 #include <functional>
 #include <initializer_list>
+#include <iostream>
+#include <mutex>
 #include <optional>
 #include <stdexcept>
 #include <vector>
-#include <mutex>
 
 namespace LouiEriksson {
 	
 	/**
-	 * @mainpage Version 2.0.0
+	 * @mainpage Version 2.0.1
 	 * @details Custom Hashmap implementation accepting a customisable key and value type.
 	 *          This implementation requires that your "key" type is compatible with std::hash and that the stored data types are copyable.
 	 * @see Wang, Q. (Harry) (2020). Implementing Your Own HashMap (Explanation + Code). YouTube.
@@ -102,10 +103,10 @@ namespace LouiEriksson {
 		size_t m_Size;
 		
 		/**
-		 * @brief Calculate the hashcode of a given object using std::fnv1a.
-		 * @param[in] _item Item to calculate fnv1a of.
+		 * @brief Calculate the hashcode of a given object using std::hash.
+		 * @param[in] _item Item to calculate hash of.
 		 * @return Hashcode of _item.
-		 * @throw std::exception If the type of _item is not supported by std::fnv1a.
+		 * @throw std::exception If the type of _item is not supported by std::hash.
 		 */
 		static constexpr size_t GetHashcode(const Tk& _item) {
 			return std::hash<Tk>()(_item);

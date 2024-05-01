@@ -1,4 +1,4 @@
-# C++ Hashmap (2.0.0)
+# C++ Hashmap (2.0.1)
 
 ## Table of Contents
 
@@ -29,9 +29,9 @@ Simply include it in your project and you are ready to start!
     
     #include <string>
     
-    #include "Hashmap.h"
+    #include "Hashmap.hpp"
     
-    Hashmap<std::string, float> hashmap {
+    LouiEriksson::Hashmap<std::string, float> hashmap {
         { "key1", 1.0f },
         { "key2", 2.0f },
         { "key3", 3.0f },
@@ -39,7 +39,7 @@ Simply include it in your project and you are ready to start!
 
     int main() {
 
-        if (const auto item = hashmap.Get("key3", item)) {
+        if (const auto item = hashmap.Get("key3")) {
             std::cout << "Value: " << item.value() << '\n';
         }
         else {
@@ -57,10 +57,11 @@ The hashmap was written in C++17 and utilises the following standard headers:
 #### &lt;cstddef&gt;
 #### &lt;functional&gt;
 #### &lt;initializer_list&gt;
+#### &lt;iostream&gt;
+#### &lt;mutex&gt;
 #### &lt;optional&gt;
 #### &lt;stdexcept&gt;
 #### &lt;vector&gt;
-#### &lt;mutex&gt;
 
 ### Why not use &lt;unordered_set&gt;?
 
