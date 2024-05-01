@@ -69,6 +69,12 @@ I find unordered_set to be way too verbose for most situations.
 
 In this implementation, key existence and value retrieval are merged into a single conditional expression. This allows for simpler, cleaner code that affords better exception handling.
 
+### Note
+
+Please note that while the hashmap is capable of being used in a concurrent environment, it does not provide a mechanism for synchronising changes to the hashmap which are made in between operations.
+
+Therefore, if you need to perform a synchronous series of operations on the Hashmap while it is being used in a concurrent context, you should lock access to the hashmap to one thread while doing so, otherwise you may encounter race conditions.
+
 ### References
 
 - Wang, Q. (Harry) (2020). Implementing Your Own HashMap (Explanation + Code). YouTube. Available at: https://www.youtube.com/watch?v=_Q-eNqTOxlE [Accessed 2021].
