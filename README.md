@@ -63,9 +63,9 @@ The hashmap was written in C++17 and utilises the following standard headers:
 #### &lt;stdexcept&gt;
 #### &lt;vector&gt;
 
-### Why not use &lt;unordered_set&gt;?
+### Why not use &lt;unordered_map&gt;?
 
-I find unordered_set to be way too verbose for most situations.
+I find unordered_map to be way too verbose for most situations.
 
 In this implementation, key existence and value retrieval are merged into a single conditional expression. This allows for simpler, cleaner code that affords better exception handling.
 
