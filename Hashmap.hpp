@@ -40,7 +40,7 @@
 namespace LouiEriksson {
 	
 	/**
-	 * @mainpage Version 2.0.2
+	 * @mainpage Version 2.1.0
 	 * @details Custom Hashmap implementation accepting a customisable key and value type.
 	 *          This implementation requires that your "key" type is compatible with std::hash and that the stored data types are copyable.
 	 * @see Wang, Q. (Harry) (2020). Implementing Your Own HashMap (Explanation + Code). YouTube.
@@ -117,8 +117,10 @@ namespace LouiEriksson {
 		 *
 		 * @param _newSize The new size of the Hashmap.
 		 */
-		constexpr void Resize(const size_t& _newSize) {
-			
+		void Resize(const size_t& _newSize) {
+
+			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+
 			std::vector<std::vector<KeyValuePair>> shallow_cpy(m_Buckets);
 			
 			m_Size = 0U;
@@ -141,8 +143,10 @@ namespace LouiEriksson {
 		 * @throw std::runtime_error If no entry is found.
 		 * @see Get(const Tk& _key, Tv& _out)
 		 */
-		constexpr const Tv& Return(const Tk& _key) const {
-			
+		const Tv& Return(const Tk& _key) const {
+
+			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+
 			const Tv* result = nullptr;
 			
 			if (!m_Buckets.empty()) {

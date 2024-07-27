@@ -6,8 +6,6 @@ set(CMAKE_CXX_STANDARD 17)
 include_directories(.)
 include_directories(tests)
 
-remove_executable(cpp_hashmap)
-
 add_executable(basic_test
         Hashmap.hpp
         tests/basic.cpp
