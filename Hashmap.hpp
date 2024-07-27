@@ -40,7 +40,7 @@
 namespace LouiEriksson {
 	
 	/**
-	 * @mainpage Version 2.0.1
+	 * @mainpage Version 2.0.2
 	 * @details Custom Hashmap implementation accepting a customisable key and value type.
 	 *          This implementation requires that your "key" type is compatible with std::hash and that the stored data types are copyable.
 	 * @see Wang, Q. (Harry) (2020). Implementing Your Own HashMap (Explanation + Code). YouTube.
@@ -191,8 +191,8 @@ namespace LouiEriksson {
 			
 			size_t auto_capacity = _capacity;
 			
-			if (auto_capacity < 1) {
-				auto_capacity = std::max<size_t>(_items.size(), 1);
+			if (auto_capacity < 1U) {
+				auto_capacity = std::max<size_t>(_items.size(), 1U);
 			}
 			
 			m_Buckets.resize(auto_capacity);
@@ -242,7 +242,7 @@ namespace LouiEriksson {
 		 * @return Returns true if the Hashmap contains no entries.
 		 */
 		[[nodiscard]] bool empty() const noexcept {
-			return size() == 0;
+			return size() == 0U;
 		}
 	
 		/**
@@ -300,7 +300,7 @@ namespace LouiEriksson {
 			try {
 				
 				if (m_Size >= m_Buckets.size()) {
-					Resize(m_Buckets.size() * 2);
+					Resize(m_Buckets.size() * 2U);
 				}
 				
 				// Create an index by taking the key's hash value and "wrapping" it with the number of buckets.
@@ -351,7 +351,7 @@ namespace LouiEriksson {
 			try {
 				
 				if (m_Size >= m_Buckets.size()) {
-					Resize(m_Buckets.size() * 2);
+					Resize(m_Buckets.size() * 2U);
 				}
 				
 				// Create an index by taking the key's hash value and "wrapping" it with the number of buckets.
@@ -398,7 +398,7 @@ namespace LouiEriksson {
 			try {
 				
 				if (m_Size >= m_Buckets.size()) {
-					Resize(m_Buckets.size() * 2);
+					Resize(m_Buckets.size() * 2U);
 				}
 				
 				// Create an index by taking the key's hash value and "wrapping" it with the number of buckets.
@@ -444,7 +444,7 @@ namespace LouiEriksson {
 			try {
 				
 				if (m_Size >= m_Buckets.size()) {
-					Resize(m_Buckets.size() * 2);
+					Resize(m_Buckets.size() * 2U);
 				}
 				
 				// Create an index by taking the key's hash value and "wrapping" it with the number of buckets.
@@ -679,7 +679,7 @@ namespace LouiEriksson {
 		 * @see Get(const Tk& _key, Tv& _out)
 		 */
 #ifndef HASHMAP_SUPPRESS_EXCEPTION_WARNING
-		[[deprecated("This function does not guarantee exception-safety and will explicitly throws if no entry exists. Consider using Get() if exception-safe access is required.\nSuppress this warning by defining \"HASHMAP_SUPPRESS_UNSAFE_WARNING\".")]]
+		[[deprecated("This function does not guarantee exception-safety and will explicitly throw if no entry exists. Consider using Get() if exception-safe access is required.\nSuppress this warning by defining \"HASHMAP_SUPPRESS_UNSAFE_WARNING\".")]]
 #endif
 		const Tv& operator[](const Tk& _key) const {
 			
