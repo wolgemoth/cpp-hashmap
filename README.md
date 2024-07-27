@@ -19,6 +19,8 @@ Explicit finalization of the hashmap is not necessary. However, if you are stori
 
 If you find a bug or have a feature-request, please raise an issue.
 
+Like hashsets? Check out my other project [cpp-hashset](https://github.com/wolgemoth/cpp-hashset).
+
 ### Instructions
 
 The implementation is header-only and written in templated C++17. You should not need to make any adjustments to your project settings or compiler flags. 
