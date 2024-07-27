@@ -40,7 +40,7 @@
 namespace LouiEriksson {
 	
 	/**
-	 * @mainpage Version 2.2.0
+	 * @mainpage Version 2.2.1
 	 * @details Custom Hashmap implementation accepting a customisable key and value type.
 	 *          This implementation requires that your "key" type is compatible with std::hash and that the stored data types are copyable.
 	 * @see Wang, Q. (Harry) (2020). Implementing Your Own HashMap (Explanation + Code). YouTube.
@@ -131,7 +131,14 @@ namespace LouiEriksson {
 
 				for (auto& bucket : shallow_cpy) {
 					for (auto& kvp : bucket) {
-						Assign(std::move(kvp.first), std::move(kvp.second));
+
+						std::exception_ptr e_ptr = nullptr;
+
+						Assign(std::move(kvp.first), std::move(kvp.second), nullptr);
+
+						if (e_ptr != nullptr) {
+							std::rethrow_exception(e_ptr);
+						}
 					}
 				}
 			}
