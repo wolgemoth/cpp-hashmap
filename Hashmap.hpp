@@ -119,8 +119,6 @@ namespace LouiEriksson {
 		 */
 		void Resize(const size_t& _newSize) {
 
-			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
-
 			std::vector<std::vector<KeyValuePair>> shallow_cpy(m_Buckets);
 
 			try {
@@ -134,7 +132,7 @@ namespace LouiEriksson {
 
 						std::exception_ptr e_ptr = nullptr;
 
-						Assign(std::move(kvp.first), std::move(kvp.second), nullptr);
+						Assign(std::move(kvp.first), std::move(kvp.second), e_ptr);
 
 						if (e_ptr != nullptr) {
 							std::rethrow_exception(e_ptr);
@@ -993,9 +991,6 @@ namespace LouiEriksson {
 		[[deprecated("This function does not guarantee exception-safety and will explicitly throw if no entry exists. Consider using Get() if exception-safe access is required.\nSuppress this warning by defining \"HASHMAP_SUPPRESS_UNSAFE_WARNING\".")]]
 #endif
 		const Tv& operator[](const Tk& _key) const {
-			
-			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
-			
 		    return Return(_key);
 		}
 		
