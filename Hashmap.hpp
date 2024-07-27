@@ -34,13 +34,14 @@
 #include <iostream>
 #include <mutex>
 #include <optional>
+#include <shared_mutex>
 #include <stdexcept>
 #include <vector>
 
 namespace LouiEriksson {
 	
 	/**
-	 * @mainpage Version 2.2.1
+	 * @mainpage Version 2.3.0
 	 * @details Custom Hashmap implementation accepting a customisable key and value type.
 	 *          This implementation requires that your "key" type is compatible with std::hash and that the stored data types are copyable.
 	 * @see Wang, Q. (Harry) (2020). Implementing Your Own HashMap (Explanation + Code). YouTube.
@@ -51,7 +52,7 @@ namespace LouiEriksson {
 	template<typename Tk, typename Tv>
 	class Hashmap final {
 		
-		inline static std::recursive_mutex s_Lock;
+		inline static std::shared_mutex s_Lock;
 		
 	public:
 		
@@ -130,12 +131,35 @@ namespace LouiEriksson {
 				for (auto& bucket : shallow_cpy) {
 					for (auto& kvp : bucket) {
 
-						std::exception_ptr e_ptr = nullptr;
+						auto& k = kvp.first;
+						auto& v = kvp.second;
 
-						Assign(std::move(kvp.first), std::move(kvp.second), e_ptr);
+						if (m_Size >= m_Buckets.size()) {
+							Resize(m_Buckets.size() * 2U);
+						}
 
-						if (e_ptr != nullptr) {
-							std::rethrow_exception(e_ptr);
+						// Create an index by taking the key's hash value and "wrapping" it with the number of buckets.
+						const auto hash = GetHashcode(k);
+						const auto i = hash % m_Buckets.size();
+
+						auto& bucket = m_Buckets[i];
+
+						auto exists = false;
+						for (auto& kvp : bucket) {
+
+							if (GetHashcode(kvp.first) == hash) {
+								exists = true;
+
+								kvp.second = std::move(v);
+
+								break;
+							}
+						}
+
+						if (!exists) {
+							m_Size++;
+
+							bucket.emplace_back(std::move(k), std::move(v));
 						}
 					}
 				}
@@ -155,8 +179,6 @@ namespace LouiEriksson {
 		 * @see Get(const Tk& _key, Tv& _out)
 		 */
 		const Tv& Return(const Tk& _key) const {
-
-			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
 
 			const Tv* result = nullptr;
 			
@@ -247,7 +269,7 @@ namespace LouiEriksson {
 		 * @return The number of items stored within the Hashmap.
 		 */
 		[[nodiscard]] const size_t& size() const noexcept {
-			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+			const std::shared_lock lock(s_Lock);
 			
 			return m_Size;
 		}
@@ -268,7 +290,7 @@ namespace LouiEriksson {
 		 */
 		bool ContainsKey(const Tk& _key) const noexcept {
 
-			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+			const std::shared_lock lock(s_Lock);
 
 			auto result = false;
 
@@ -303,8 +325,8 @@ namespace LouiEriksson {
 		 */
 		bool ContainsKey(const Tk& _key, std::exception_ptr& _exception) const noexcept {
 			
-			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
-			
+			const std::shared_lock lock(s_Lock);
+
 			auto result = false;
 			
 			try {
@@ -341,7 +363,7 @@ namespace LouiEriksson {
 		 */
 		bool Add(const Tk& _key, const Tv& _value) noexcept {
 
-			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+			const std::unique_lock lock(s_Lock);
 
 			auto result = true;
 
@@ -390,7 +412,7 @@ namespace LouiEriksson {
 		 */
 		bool Add(const Tk& _key, const Tv& _value, std::exception_ptr& _exception) noexcept {
 			
-			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+			const std::unique_lock lock(s_Lock);
 			
 			auto result = true;
 			
@@ -440,7 +462,7 @@ namespace LouiEriksson {
 		 */
 		bool Add(const Tk&& _key, const Tv&& _value) noexcept {
 
-			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+			const std::unique_lock lock(s_Lock);
 
 			auto result = true;
 
@@ -489,7 +511,7 @@ namespace LouiEriksson {
 		 */
 		bool Add(const Tk&& _key, const Tv&& _value, std::exception_ptr& _exception) noexcept {
 			
-			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+			const std::unique_lock lock(s_Lock);
 			
 			auto result = true;
 			
@@ -537,7 +559,7 @@ namespace LouiEriksson {
 		 */
 		void Assign(const Tk& _key, const Tv& _value) noexcept {
 
-			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+			const std::unique_lock lock(s_Lock);
 
 			try {
 
@@ -581,7 +603,7 @@ namespace LouiEriksson {
 		 */
 		void Assign(const Tk& _key, const Tv& _value, std::exception_ptr& _exception) noexcept {
 			
-			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+			const std::unique_lock lock(s_Lock);
 			
 			try {
 				
@@ -626,7 +648,7 @@ namespace LouiEriksson {
 		 */
 		void Assign(Tk&& _key, Tv&& _value) noexcept {
 
-			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+			const std::unique_lock lock(s_Lock);
 
 			try {
 
@@ -670,7 +692,7 @@ namespace LouiEriksson {
 		 */
 		void Assign(Tk&& _key, Tv&& _value, std::exception_ptr& _exception) noexcept {
 			
-			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+			const std::unique_lock lock(s_Lock);
 			
 			try {
 				
@@ -715,7 +737,7 @@ namespace LouiEriksson {
 		 */
 		bool Remove(const Tk& _key) noexcept {
 
-			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+			const std::unique_lock lock(s_Lock);
 
 			bool result = false;
 
@@ -756,7 +778,7 @@ namespace LouiEriksson {
 		 */
 		bool Remove(const Tk& _key, std::exception_ptr& _exception) noexcept {
 			
-			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+			const std::unique_lock lock(s_Lock);
 			
 			bool result = false;
 			
@@ -800,7 +822,7 @@ namespace LouiEriksson {
 		 */
 		optional_ref Get(const Tk& _key) const noexcept {
 
-			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+			const std::shared_lock lock(s_Lock);
 
 			typename optional_ref::optional_t result = std::nullopt;
 
@@ -839,7 +861,7 @@ namespace LouiEriksson {
 		 */
 		optional_ref Get(const Tk& _key, std::exception_ptr& _exception) const noexcept {
 			
-			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+			const std::shared_lock lock(s_Lock);
 			
 			typename optional_ref::optional_t result = std::nullopt;
 			
@@ -874,7 +896,7 @@ namespace LouiEriksson {
 		 */
 		void Trim() {
 			
-			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+			const std::unique_lock lock(s_Lock);
 			
 			size_t trimStart = 1U;
 			
@@ -895,7 +917,7 @@ namespace LouiEriksson {
 		 */
 		[[nodiscard]] std::vector<Tk> Keys() const {
 			
-			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+			const std::shared_lock lock(s_Lock);
 			
 			std::vector<Tk> result;
 			
@@ -914,7 +936,7 @@ namespace LouiEriksson {
 		 */
 		[[nodiscard]] std::vector<Tv> Values() const {
 			
-			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+			const std::shared_lock lock(s_Lock);
 			
 			std::vector<Tv> result;
 			
@@ -933,7 +955,7 @@ namespace LouiEriksson {
 		 */
 		[[nodiscard]] std::vector<KeyValuePair> GetAll() const {
 			
-			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+			const std::shared_lock lock(s_Lock);
 			
 			std::vector<KeyValuePair> result;
 			
@@ -953,7 +975,7 @@ namespace LouiEriksson {
 		 */
 		void Reserve(const std::size_t& _newSize) {
 			
-			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+			const std::unique_lock lock(s_Lock);
 			
 			if (m_Size < _newSize) {
 				Resize(_newSize);
@@ -965,7 +987,7 @@ namespace LouiEriksson {
 		 */
 		void Clear() noexcept {
 			
-			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+			const std::unique_lock lock(s_Lock);
 			
 			try {
 				m_Buckets.clear();
@@ -991,6 +1013,9 @@ namespace LouiEriksson {
 		[[deprecated("This function does not guarantee exception-safety and will explicitly throw if no entry exists. Consider using Get() if exception-safe access is required.\nSuppress this warning by defining \"HASHMAP_SUPPRESS_UNSAFE_WARNING\".")]]
 #endif
 		const Tv& operator[](const Tk& _key) const {
+
+			const std::shared_lock lock(s_Lock);
+
 		    return Return(_key);
 		}
 		
