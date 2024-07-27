@@ -40,7 +40,7 @@
 namespace LouiEriksson {
 	
 	/**
-	 * @mainpage Version 2.1.0
+	 * @mainpage Version 2.2.0
 	 * @details Custom Hashmap implementation accepting a customisable key and value type.
 	 *          This implementation requires that your "key" type is compatible with std::hash and that the stored data types are copyable.
 	 * @see Wang, Q. (Harry) (2020). Implementing Your Own HashMap (Explanation + Code). YouTube.
@@ -122,15 +122,21 @@ namespace LouiEriksson {
 			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
 
 			std::vector<std::vector<KeyValuePair>> shallow_cpy(m_Buckets);
-			
-			m_Size = 0U;
-			m_Buckets.clear();
-			m_Buckets.resize(_newSize > 0U ? _newSize : 1U);
-			
-			for (auto& bucket : shallow_cpy) {
-				for (auto& kvp : bucket) {
-					Assign(std::move(kvp.first), std::move(kvp.second));
+
+			try {
+
+				m_Size = 0U;
+				m_Buckets.clear();
+				m_Buckets.resize(_newSize > 0U ? _newSize : 1U);
+
+				for (auto& bucket : shallow_cpy) {
+					for (auto& kvp : bucket) {
+						Assign(std::move(kvp.first), std::move(kvp.second));
+					}
 				}
+			}
+			catch (const std::exception& e){
+				m_Buckets = shallow_cpy;
 			}
 		}
 		
@@ -248,7 +254,41 @@ namespace LouiEriksson {
 		[[nodiscard]] bool empty() const noexcept {
 			return size() == 0U;
 		}
-	
+
+		/**
+		 * @brief Queries for the existence of an item in the Hashmap.
+		 *
+		 * @param[in] _key Key of the entry.
+		 * @return True if successful, false otherwise.
+		 */
+		bool ContainsKey(const Tk& _key) const noexcept {
+
+			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+
+			auto result = false;
+
+			try {
+
+				// Create an index by taking the key's hash value and "wrapping" it with the number of buckets.
+				size_t hash = GetHashcode(_key);
+				size_t i = hash % m_Buckets.size();
+
+				auto& bucket = m_Buckets[i];
+
+				for (auto& kvp : bucket) {
+
+					if (GetHashcode(kvp.first) == hash) {
+						result = true;
+
+						break;
+					}
+				}
+			}
+			catch (...) {}
+
+			return result;
+		}
+
 		/**
 		 * @brief Queries for the existence of an item in the Hashmap.
 		 *
@@ -256,7 +296,7 @@ namespace LouiEriksson {
 		 * @param[out] _exception (optional) A pointer to any exception caught during the operation.
 		 * @return True if successful, false otherwise.
 		 */
-		bool ContainsKey(const Tk& _key, [[maybe_unused]] std::exception_ptr _exception = nullptr) const noexcept {
+		bool ContainsKey(const Tk& _key, std::exception_ptr& _exception) const noexcept {
 			
 			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
 			
@@ -285,7 +325,55 @@ namespace LouiEriksson {
 			
 			return result;
 		}
-		
+
+		/**
+		 * @brief Inserts a new entry into the Hashmap with given key and value, if one does not already exist.
+		 * If you are trying to modify an existing key, see Hashmap::Assign.
+		 *
+		 * @param[in] _key Key of the entry.
+		 * @param[in] _value Value of the entry.
+		 * @return True if successful, false otherwise.
+		 */
+		bool Add(const Tk& _key, const Tv& _value) noexcept {
+
+			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+
+			auto result = true;
+
+			try {
+
+				if (m_Size >= m_Buckets.size()) {
+					Resize(m_Buckets.size() * 2U);
+				}
+
+				// Create an index by taking the key's hash value and "wrapping" it with the number of buckets.
+				const auto hash = GetHashcode(_key);
+				const auto i = hash % m_Buckets.size();
+
+				auto& bucket = m_Buckets[i];
+
+				// In the case of a hash collision, determine if the key is unique.
+				// We will treat duplicate insertions as a mistake on the developer's part and return failure.
+				for (auto& kvp : bucket) {
+					if (GetHashcode(kvp.first) == hash) {
+						result = false;
+
+						break;
+					}
+				}
+
+				// Insert the item into the bucket.
+				if (result) {
+					m_Size++;
+
+					bucket.emplace_back(_key, _value);
+				}
+			}
+			catch (...) {}
+
+			return result;
+		}
+
 		/**
 		 * @brief Inserts a new entry into the Hashmap with given key and value, if one does not already exist.
 		 * If you are trying to modify an existing key, see Hashmap::Assign.
@@ -295,7 +383,7 @@ namespace LouiEriksson {
 		 * @param[out] _exception (optional) A pointer to any exception caught during the operation.
 		 * @return True if successful, false otherwise.
 		 */
-		bool Add(const Tk& _key, const Tv& _value, [[maybe_unused]] std::exception_ptr _exception = nullptr) noexcept {
+		bool Add(const Tk& _key, const Tv& _value, std::exception_ptr& _exception) noexcept {
 			
 			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
 			
@@ -336,7 +424,55 @@ namespace LouiEriksson {
 			
 			return result;
 		}
-		
+
+		/**
+		 * @brief Inserts a new entry into the Hashmap with given key and value using move semantics, if one does not already exist.
+		 * If you are trying to modify an existing key, see Hashmap::Assign.
+		 *
+		 * @param[in] _key Key of the entry.
+		 * @param[in] _value Value of the entry.
+		 * @return True if successful, false otherwise.
+		 */
+		bool Add(const Tk&& _key, const Tv&& _value) noexcept {
+
+			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+
+			auto result = true;
+
+			try {
+
+				if (m_Size >= m_Buckets.size()) {
+					Resize(m_Buckets.size() * 2U);
+				}
+
+				// Create an index by taking the key's hash value and "wrapping" it with the number of buckets.
+				const auto hash = GetHashcode(_key);
+				const auto i = hash % m_Buckets.size();
+
+				auto& bucket = m_Buckets[i];
+
+				// In the case of a hash collision, determine if the key is unique.
+				// We will treat duplicate insertions as a mistake on the developer's part and return failure.
+				for (auto& kvp : bucket) {
+					if (GetHashcode(kvp.first) == hash) {
+						result = false;
+
+						break;
+					}
+				}
+
+				// Insert the item into the bucket.
+				if (result) {
+					m_Size++;
+
+					bucket.emplace_back(_key, _value);
+				}
+			}
+			catch (...) {}
+
+			return result;
+		}
+
 		/**
 		 * @brief Inserts a new entry into the Hashmap with given key and value using move semantics, if one does not already exist.
 		 * If you are trying to modify an existing key, see Hashmap::Assign.
@@ -346,7 +482,7 @@ namespace LouiEriksson {
 		 * @param[out] _exception (optional) A pointer to any exception caught during the operation.
 		 * @return True if successful, false otherwise.
 		 */
-		bool Add(const Tk&& _key, const Tv&& _value, [[maybe_unused]] std::exception_ptr _exception = nullptr) noexcept {
+		bool Add(const Tk&& _key, const Tv&& _value, std::exception_ptr& _exception) noexcept {
 			
 			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
 			
@@ -387,7 +523,50 @@ namespace LouiEriksson {
 			
 			return result;
 		}
-		
+
+		/**
+		 * @brief Inserts or replaces an entry within the Hashmap with the given key.
+		 *
+		 * @param[in] _key Key of the entry.
+		 * @param[in] _value Value of the entry.
+		 */
+		void Assign(const Tk& _key, const Tv& _value) noexcept {
+
+			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+
+			try {
+
+				if (m_Size >= m_Buckets.size()) {
+					Resize(m_Buckets.size() * 2U);
+				}
+
+				// Create an index by taking the key's hash value and "wrapping" it with the number of buckets.
+				const auto hash = GetHashcode(_key);
+				const auto i = hash % m_Buckets.size();
+
+				auto& bucket = m_Buckets[i];
+
+				auto exists = false;
+				for (auto& kvp : bucket) {
+
+					if (GetHashcode(kvp.first) == hash) {
+						exists = true;
+
+						kvp.second = _value;
+
+						break;
+					}
+				}
+
+				if (!exists) {
+					m_Size++;
+
+					bucket.emplace_back(_key, _value);
+				}
+			}
+			catch (...) {}
+		}
+
 		/**
 		 * @brief Inserts or replaces an entry within the Hashmap with the given key.
 		 *
@@ -395,7 +574,7 @@ namespace LouiEriksson {
 		 * @param[in] _value Value of the entry.
 		 * @param[out] _exception (optional) A pointer to any exception caught during the operation.
 		 */
-		void Assign(const Tk& _key, const Tv& _value, [[maybe_unused]] std::exception_ptr _exception = nullptr) noexcept {
+		void Assign(const Tk& _key, const Tv& _value, std::exception_ptr& _exception) noexcept {
 			
 			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
 			
@@ -433,7 +612,50 @@ namespace LouiEriksson {
 				_exception = std::current_exception();
 			}
 		}
-		
+
+		/**
+		 * @brief Inserts or replaces an entry within the Hashmap with the given key using move semantics.
+		 *
+		 * @param[in] _key Key of the entry.
+		 * @param[in] _value Value of the entry.
+		 */
+		void Assign(Tk&& _key, Tv&& _value) noexcept {
+
+			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+
+			try {
+
+				if (m_Size >= m_Buckets.size()) {
+					Resize(m_Buckets.size() * 2U);
+				}
+
+				// Create an index by taking the key's hash value and "wrapping" it with the number of buckets.
+				const auto hash = GetHashcode(_key);
+				const auto i = hash % m_Buckets.size();
+
+				auto& bucket = m_Buckets[i];
+
+				auto exists = false;
+				for (auto& kvp : bucket) {
+
+					if (GetHashcode(kvp.first) == hash) {
+						exists = true;
+
+						kvp.second = std::move(_value);
+
+						break;
+					}
+				}
+
+				if (!exists) {
+					m_Size++;
+
+					bucket.emplace_back(std::move(_key), std::move(_value));
+				}
+			}
+			catch (...) {}
+		}
+
 		/**
 		 * @brief Inserts or replaces an entry within the Hashmap with the given key using move semantics.
 		 *
@@ -441,7 +663,7 @@ namespace LouiEriksson {
 		 * @param[in] _value Value of the entry.
 		 * @param[out] _exception (optional) A pointer to any exception caught during the operation.
 		 */
-		void Assign(Tk&& _key, Tv&& _value, [[maybe_unused]] std::exception_ptr _exception = nullptr) noexcept {
+		void Assign(Tk&& _key, Tv&& _value, std::exception_ptr& _exception) noexcept {
 			
 			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
 			
@@ -479,7 +701,47 @@ namespace LouiEriksson {
 				_exception = std::current_exception();
 			}
 		}
-		
+
+		/**
+		 * @brief Removes entry with given key from the Hashmap.
+		 *
+		 * @param[in] _key Key of the entry to be removed.
+		 * @return True if successful, false otherwise.
+		 */
+		bool Remove(const Tk& _key) noexcept {
+
+			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+
+			bool result = false;
+
+			try {
+
+				// Create an index by taking the key's hash value and "wrapping" it with the number of buckets.
+				const size_t hash = GetHashcode(_key);
+				const size_t i = hash % m_Buckets.size();
+
+				auto& bucket = m_Buckets[i];
+
+				// In the case of accessing a "collided" hash, find the value in the bucket using equality checks.
+				for (auto itr = bucket.begin(); itr < bucket.end(); itr++) {
+
+					if (GetHashcode(itr->first) == hash) {
+						result = true;
+
+						bucket.erase(itr);
+
+						break;
+					}
+				}
+
+				m_Size -= static_cast<size_t>(result);
+
+			}
+			catch (...) {}
+
+			return result;
+		}
+
 		/**
 		 * @brief Removes entry with given key from the Hashmap.
 		 *
@@ -487,7 +749,7 @@ namespace LouiEriksson {
 		 * @param[out] _exception (optional) A pointer to any exception caught during the operation.
 		 * @return True if successful, false otherwise.
 		 */
-		bool Remove(const Tk& _key, [[maybe_unused]] std::exception_ptr _exception = nullptr) noexcept {
+		bool Remove(const Tk& _key, std::exception_ptr& _exception) noexcept {
 			
 			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
 			
@@ -522,7 +784,45 @@ namespace LouiEriksson {
 			
 			return result;
 		}
-		
+
+		/**
+		 * @brief Retrieves the value associated with the given key from the fnv1a table.
+		 *
+		 * @tparam Tk The type of the key.
+		 * @param[in] _key The key to retrieve the value for.
+		 * @return An optional reference to the value associated with the key, or std::nullopt if the key is not present.
+		 * @note This function is noexcept.
+		 */
+		optional_ref Get(const Tk& _key) const noexcept {
+
+			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
+
+			typename optional_ref::optional_t result = std::nullopt;
+
+			try {
+
+				if (!m_Buckets.empty()) {
+
+					// Create an index by taking the key's hash value and "wrapping" it with the number of buckets.
+					size_t hash = GetHashcode(_key);
+					size_t i = hash % m_Buckets.size();
+
+					auto& bucket = m_Buckets[i];
+
+					for (auto& kvp : bucket) {
+
+						if (GetHashcode(kvp.first) == hash) {
+							result = std::cref(kvp.second);
+							break;
+						}
+					}
+				}
+			}
+			catch (...) {}
+
+			return optional_ref(std::move(result));
+		}
+
 		/**
 		 * @brief Retrieves the value associated with the given key from the fnv1a table.
 		 *
@@ -532,7 +832,7 @@ namespace LouiEriksson {
 		 * @return An optional reference to the value associated with the key, or std::nullopt if the key is not present.
 		 * @note This function is noexcept.
 		 */
-		optional_ref Get(const Tk& _key, std::exception_ptr _exception = nullptr) const noexcept {
+		optional_ref Get(const Tk& _key, std::exception_ptr& _exception) const noexcept {
 			
 			const std::lock_guard<std::recursive_mutex> lock(s_Lock);
 			
