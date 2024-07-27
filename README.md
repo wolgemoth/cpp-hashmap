@@ -19,7 +19,7 @@ Explicit finalization of the hashmap is not necessary. However, if you are stori
 
 If you find a bug or have a feature-request, please raise an issue.
 
-Like hashsets? Check out my other project [cpp-hashset](https://github.com/wolgemoth/cpp-hashset).
+Like hashsets? Check out my other project: [cpp-hashset](https://github.com/wolgemoth/cpp-hashset).
 
 ### Instructions
 
