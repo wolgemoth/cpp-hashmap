@@ -7,16 +7,16 @@ include_directories(.)
 include_directories(tests)
 
 add_executable(basic_test
-        Hashmap.hpp
+        hashmap.hpp
         tests/basic.cpp
 )
 
 add_executable(advanced_test
-        Hashmap.hpp
+        hashmap.hpp
         tests/advanced.cpp
 )
 
 add_executable(extreme_test
-        Hashmap.hpp
+        hashmap.hpp
         tests/extreme.cpp
 )

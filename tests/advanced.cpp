@@ -1,4 +1,4 @@
-#include "../Hashmap.hpp"
+#include "../hashmap.hpp"
 
 #include <iostream>
 #include <cassert>
@@ -11,7 +11,7 @@
  */
 int main([[maybe_unused]] int _argc, [[maybe_unused]] char* _argv[]) {
 	
-	LouiEriksson::Hashmap<int, std::string> hashmap;
+	louieriksson::hashmap<int, std::string> hashmap;
 
 	std::cout << "~ ADVANCED TESTS ~\n";
 	
@@ -22,7 +22,7 @@ int main([[maybe_unused]] int _argc, [[maybe_unused]] char* _argv[]) {
 		static constexpr int iterations = 2000000;
 		
 		for (int i = 0; i < iterations; ++i) {
-			hashmap.Add(i, std::to_string(i));
+			hashmap.add(i, std::to_string(i));
 		}
 		assert(hashmap.size() == iterations);
 		
@@ -36,9 +36,9 @@ int main([[maybe_unused]] int _argc, [[maybe_unused]] char* _argv[]) {
 		const auto controlSize = hashmap.size();
 		
 		for (int i = 0; i < controlSize; ++i) {
-			hashmap.Add(i, "Duplicate");
+			hashmap.add(i, "Duplicate");
 			
-			assert((hashmap.Get(i).value() != "Duplicate") &&     "Duplicate found.");
+			assert((hashmap.get(i).value() != "Duplicate") &&     "Duplicate found.");
 			assert((hashmap.size() == controlSize)         && "Erroneous insertion.");
 		}
 		
@@ -52,9 +52,9 @@ int main([[maybe_unused]] int _argc, [[maybe_unused]] char* _argv[]) {
 		static constexpr int iterations = 2000000;
 		
 		for (int i = 1; i < iterations; ++i) {
-			hashmap.Add(-i, "Negative");
+			hashmap.add(-i, "Negative");
 			
-			assert(hashmap.Get(-i).value() == "Negative");
+			assert(hashmap.get(-i).value() == "Negative");
 		}
 		
 		std::cout << "Done.\n";
@@ -64,13 +64,13 @@ int main([[maybe_unused]] int _argc, [[maybe_unused]] char* _argv[]) {
 	{
 		std::cout << "Test 4: High churn..." << std::flush;
 		
-		hashmap.Clear();
+		hashmap.clear();
 		
 		static constexpr int iterations = 2000000;
 		
 		for (int i = iterations; i < iterations * 2; ++i) {
-			hashmap.Add(i, std::to_string(i));
-			hashmap.Remove(i - iterations);
+			hashmap.add(i, std::to_string(i));
+			hashmap.remove(i - iterations);
 		}
 		assert(hashmap.size() == iterations);
 		
@@ -81,7 +81,7 @@ int main([[maybe_unused]] int _argc, [[maybe_unused]] char* _argv[]) {
 	{
 		std::cout << "Test 5: Concurrency..." << std::flush;
 		
-		hashmap.Clear();
+		hashmap.clear();
 		
 		static constexpr int iterations = 2000000;
 		
@@ -92,7 +92,7 @@ int main([[maybe_unused]] int _argc, [[maybe_unused]] char* _argv[]) {
 			
 			try {
 				for (int i = 0; i < iterations; ++i) {
-					hashmap.Add(i, std::to_string(i));
+					hashmap.add(i, std::to_string(i));
 				}
 			}
 			catch (...) {
@@ -108,7 +108,7 @@ int main([[maybe_unused]] int _argc, [[maybe_unused]] char* _argv[]) {
 				while (last_size < iterations) {
 					if (hashmap.size() > last_size) {
 						for (int i = last_size; i < hashmap.size(); ++i) {
-							assert((hashmap.Get(i).value() == std::to_string(i)));
+						    assert(hashmap.get(i).value() == std::to_string(i));
 						}
 						last_size = hashmap.size();
 					}

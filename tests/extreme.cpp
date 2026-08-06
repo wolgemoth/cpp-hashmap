@@ -1,7 +1,8 @@
-#include "../Hashmap.hpp"
+#include "../hashmap.hpp"
 
 #include <iostream>
 #include <cassert>
+#include <mutex>
 #include <string>
 #include <thread>
 
@@ -11,7 +12,7 @@
  */
 int main([[maybe_unused]] int _argc, [[maybe_unused]] char* _argv[]) {
 	
-	LouiEriksson::Hashmap<int, std::string> hashmap;
+	louieriksson::hashmap<int, std::string> hashmap;
 
 	std::cout << "~ EXTREME TESTS ~\n";
 	
@@ -24,22 +25,30 @@ int main([[maybe_unused]] int _argc, [[maybe_unused]] char* _argv[]) {
 		
 		std::vector<std::pair<std::thread, std::exception_ptr>> threads;
 		
+		// The hashmap only guarantees safety for individual operations. As documented, compound
+		// sequences of operations (such as a remove-add-assign-get sequence performed on the same
+		// key) must be synchronised externally by the caller to avoid a reference returned by
+		// get() being invalidated by another thread's concurrent mutation before it is read.
+		std::mutex compound_op_lock;
+		
 		// Perform concurrent deletions, insertions, overwrites, and reads.
 		for (int i = 0; i < concurrency; ++i) {
 			
 			std::exception_ptr exceptionPtr;
 			
 			threads.emplace_back(
-				std::thread([i, &threads, &hashmap, &exceptionPtr]() {
+				std::thread([i, &threads, &hashmap, &exceptionPtr, &compound_op_lock]() {
 					
 					try {
 						for (int j = 0; j < iterations; ++j) {
 							
-							hashmap.Remove(j);
-							hashmap.Add(j, std::to_string(j));
-							hashmap.Assign(j, std::to_string(j));
+							const std::lock_guard<std::mutex> lock(compound_op_lock);
 							
-							if (auto item = hashmap.Get(j)) {
+							hashmap.remove(j);
+							hashmap.add(j, std::to_string(j));
+							hashmap.assign(j, std::to_string(j));
+							
+							if (auto item = hashmap.get(j)) {
 								assert(item.value() == std::to_string(j) && "Item value mismatch!");
 							}
 						}
@@ -66,7 +75,7 @@ int main([[maybe_unused]] int _argc, [[maybe_unused]] char* _argv[]) {
 		assert(hashmap.size() == iterations && "Erroneous insertion detected!");
 		
 		// Clear hashmap and assert it is empty.
-		hashmap.Clear();
+		hashmap.clear();
 		assert(hashmap.empty() && "Clearing failed!");
 		
 		std::cout << "Done.\n";
